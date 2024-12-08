@@ -1,0 +1,60 @@
+import serial
+import time
+import tkinter as tk
+from tkinter import messagebox
+
+
+arduino_port = 'COM' //COMx 
+baud_rate = 9600  
+
+try:
+    arduino = serial.Serial(arduino_port, baud_rate, timeout=1)
+    time.sleep(2)  # Wait for the connection to establish
+    print(f"Connected to Arduino on {arduino_port}")
+except Exception as e:
+    messagebox.showerror("Error", f"Unable to connect to Arduino:\n{e}")
+    exit()
+
+# Function to send angle to Arduino
+def move_servo():
+    try:
+        angle = int(angle_entry.get())  
+        if 0 <= angle <= 180:
+            arduino.write(f"{angle}\n".encode())  
+            time.sleep(0.1)  # Allow time for servo to move
+            response = arduino.readline().decode().strip()  
+            response_label.config(text=response)
+        else:
+            messagebox.showwarning("Invalid Input", "Angle must be between 0 and 180.")
+    except ValueError:
+        messagebox.showwarning("Invalid Input", "Please enter a valid integer angle.")
+
+# Function to close the program safely
+def on_closing():
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        arduino.close()  
+        root.destroy()  
+
+# Create Tkinter GUI
+root = tk.Tk()
+root.title("Arduino Servo Control")
+root.geometry("400x200")
+
+# Angle Input Label and Entry
+tk.Label(root, text="Enter Servo Angle (0-180):", font=("Arial", 12)).pack(pady=10)
+angle_entry = tk.Entry(root, font=("Arial", 12), justify="center")
+angle_entry.pack(pady=5)
+
+# Move Servo Button
+move_button = tk.Button(root, text="Move Servo", font=("Arial", 12), command=move_servo)
+move_button.pack(pady=10)
+
+# Response Label
+response_label = tk.Label(root, text="", font=("Arial", 12), fg="green")
+response_label.pack(pady=10)
+
+# Handle window close event
+root.protocol("WM_DELETE_WINDOW", on_closing)
+
+# Run the Tkinter event loop
+root.mainloop()
